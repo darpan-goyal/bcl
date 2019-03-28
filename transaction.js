@@ -132,10 +132,10 @@ module.exports = class Transaction {
           if (utils.hash(this.inputs[i].pubKey, 'base64') !== matchingUTXO[i].address) {
             return false;
           }
-          // if(utils.verifySignature(this.inputs[i].pubKey, matchingUTXO[i], this.inputs[i].sig))
-          // {
-          //   return false;
-          // }
+          if(!utils.verifySignature(this.inputs[i].pubKey, matchingUTXO[i], this.inputs[i].sig))
+          {
+             return false;
+           }
           totalWeHave += matchingUTXO[i].amount;
     }
 
