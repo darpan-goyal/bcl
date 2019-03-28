@@ -85,10 +85,12 @@ module.exports = class Wallet {
    *    the amount required, and the amount of change left over.
    */
   spendUTXOs(amount) {
+    let arrayInput = [];
+      let change = 0;
+      let total = 0;
     if (amount > this.balance) {
       throw new Error(`Insufficient funds.  Requested ${amount}, but only ${this.balance} is available.`);
     }
-
     //
     // **YOUR CODE HERE**
     //
@@ -101,11 +103,56 @@ module.exports = class Wallet {
 
 
     // Currently returning default values.
-    return {
-      inputs: [],
-      changeAmt: 0,
-    };
+      
+      else{
+        for(let i = 0; i < this.coins.length;i++){
+          let inputToAdd = {};
+          if(i == 0)
+          {
+            let coinAdd = this.coins[i];
+              inputToAdd.txID = coinAdd.txID;
+              inputToAdd.outputIndex = coinAdd.outputIndex;
+              inputToAdd.pubKey = this.addresses[coinAdd.output.address].public;
+              inputToAdd.sig = utils.sign(this.addresses[coinAdd.output.address].private, coinAdd.output)
+              arrayInput.push(inputToAdd);
+              this.coins.splice(i,1);
 
+            if(this.coins[i].output.amount >= amount)
+            {
+              change = this.coins[i].output.amount - amount;
+              return {
+                inputs: arrayInput,
+                changeAmt: change,
+              };
+            }
+            else
+            {
+              total = total + this.coins[i].output.amount;
+            }
+          }
+          else
+          {
+            total = total + this.coins[i].output.amount;
+            if(total >= amount)
+            {
+              let coinAdd = this.coins[i];
+              inputToAdd.txID = coinAdd.txID;
+              inputToAdd.outputIndex = coinAdd.outputIndex;
+              inputToAdd.pubKey = this.addresses[coinAdd.output.address].public;
+              inputToAdd.sig = utils.sign(this.addresses[coinAdd.output.address].private)
+              arrayInput.push(inputToAdd);
+              this.coins.splice(i,1);
+              change = total - amount;
+              return {
+                inputs: arrayInput,
+                changeAmt: change,
+              };
+            }
+          }
+  
+  
+        }
+      }
   }
 
   /**

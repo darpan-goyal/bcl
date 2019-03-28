@@ -37,14 +37,20 @@ module.exports = class Transaction {
    * @param {Array} obj.outputs - An array of the outputs.
    * @param {Array} obj.inputs - An array of the inputs.
    */
-  constructor({outputs, inputs=[]}) {
+  constructor({
+    outputs,
+    inputs = []
+  }) {
     this.inputs = inputs;
     this.outputs = outputs;
 
     // The id is determined at creation and remains constant,
     // even if outputs change.  (This case should only come up
     // with coinbase transactions).
-    this.id = utils.hash("" + JSON.stringify({inputs, outputs}));
+    this.id = utils.hash("" + JSON.stringify({
+      inputs,
+      outputs
+    }));
   }
 
   /**
@@ -55,12 +61,20 @@ module.exports = class Transaction {
    * @param {Object} input - The object representing an input
    */
   spendOutput(input) {
-    let {txID, outputIndex, pubKey, sig} = input;
+    let {
+      txID,
+      outputIndex,
+      pubKey,
+      sig
+    } = input;
     if (txID !== this.id) {
       throw new Error(`Transaction id of input was ${txID}, but this transaction's id is ${this.id}`);
     }
     let output = this.outputs[outputIndex];
-    let {amount, address} = output;
+    let {
+      amount,
+      address
+    } = output;
     if (utils.calcAddress(pubKey) !== address) {
       throw new Error(`Public key does not match its hash for tx ${this.id}, output ${outputIndex}.`);
     } else if (!utils.verifySignature(pubKey, output, sig)) {
@@ -105,6 +119,31 @@ module.exports = class Transaction {
     // 4) From here, you can gather the amount of **input** available to
     //      this transaction.
 
+    let matchingUTXO = {};
+    let utxo;
+
+    let totalWeHave = 0;
+    for (let i = 0; i < this.inputs.length; i++) {
+          matchingUTXO[i] = utxos[this.inputs[i].txID][this.inputs[i].outputIndex]; //Part 1
+
+          if (matchingUTXO[i] === undefined) {
+            return false;
+          }
+          if (utils.hash(this.inputs[i].pubKey, 'base64') !== matchingUTXO[i].address) {
+            return false;
+          }
+          // if(utils.verifySignature(this.inputs[i].pubKey, matchingUTXO[i], this.inputs[i].sig))
+          // {
+          //   return false;
+          // }
+          totalWeHave += matchingUTXO[i].amount;
+    }
+
+    if (this.totalOutput() > totalWeHave) {
+      return false;
+    } else {
+      return true;
+    }
   }
 
   /**
@@ -127,7 +166,9 @@ module.exports = class Transaction {
    */
   totalOutput() {
     return this.outputs.reduce(
-      (acc, {amount}) => acc + amount,
+      (acc, {
+        amount
+      }) => acc + amount,
       0);
   }
 }
