@@ -115,11 +115,12 @@ module.exports = class Wallet {
               inputToAdd.pubKey = this.addresses[coinAdd.output.address].public;
               inputToAdd.sig = utils.sign(this.addresses[coinAdd.output.address].private, coinAdd.output)
               arrayInput.push(inputToAdd);
-              this.coins.splice(i,1);
+              
 
             if(this.coins[i].output.amount >= amount)
             {
               change = this.coins[i].output.amount - amount;
+              this.coins.splice(i,1);
               return {
                 inputs: arrayInput,
                 changeAmt: change,

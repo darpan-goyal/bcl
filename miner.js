@@ -100,11 +100,19 @@ module.exports = class Miner extends Client {
 
       this.currentBlock.proof++;
     }
+    // if(this.isValidBlock(this.currentBlock))
+    //   {
+    //     this.receiveOutput(this.currentBlock.coinbaseTX);
+    //     this.announceProof();
+    //     this.startNewSearch();
+    //     this.log("found the proof, new block starting");
+    //   }
     // If we are testing, don't continue the search.
     if (!oneAndDone) {
       // Check if anyone has found a block, and then return to mining.
       setTimeout(() => this.emit(START_MINING), 0);
     }
+    
   }
 
   /**

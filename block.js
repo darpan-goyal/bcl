@@ -30,15 +30,25 @@ module.exports = class Block {
   static makeGenesisBlock(clientInitialFunds) {
     // Creating outputs
     let outputs = [];
-    clientInitialFunds.forEach(({ client, amount }) => {
+    clientInitialFunds.forEach(({
+      client,
+      amount
+    }) => {
       let addr = client.wallet.makeAddress();
-      let out = { address: addr, amount: amount };
+      let out = {
+        address: addr,
+        amount: amount
+      };
       outputs.push(out);
     });
 
     // Adding funds to clients' wallets
-    let tx = new Transaction({outputs: outputs});
-    clientInitialFunds.forEach(({client}, i) => {
+    let tx = new Transaction({
+      outputs: outputs
+    });
+    clientInitialFunds.forEach(({
+      client
+    }, i) => {
       client.wallet.addUTXO(outputs[i], tx.id, i);
     });
 
@@ -68,9 +78,15 @@ module.exports = class Block {
 
     // Transactions need to be recreated and restored in a map.
     b.transactions = new Map();
-    o.transactions.forEach(([txID,txJson]) => {
-      let { outputs, inputs } = txJson;
-      let tx = new Transaction({outputs, inputs});
+    o.transactions.forEach(([txID, txJson]) => {
+      let {
+        outputs,
+        inputs
+      } = txJson;
+      let tx = new Transaction({
+        outputs,
+        inputs
+      });
       tx.id = txID;
       b.transactions.set(txID, tx);
     });
@@ -97,7 +113,7 @@ module.exports = class Block {
     // Note that this is a little simplistic -- an attacker
     // make a long, but low-work chain.  However, this works
     // well enough for us.
-    this.chainLength = prevBlock ? prevBlock.chainLength+1 : 1;
+    this.chainLength = prevBlock ? prevBlock.chainLength + 1 : 1;
 
     this.timestamp = Date.now();
 
@@ -112,9 +128,14 @@ module.exports = class Block {
 
     // Add the initial coinbase reward.
     if (rewardAddr) {
-      let output = { address: rewardAddr, amount: COINBASE_AMT_ALLOWED};
+      let output = {
+        address: rewardAddr,
+        amount: COINBASE_AMT_ALLOWED
+      };
       // The coinbase transaction will be updated to capture transaction fees.
-      this.coinbaseTX = new Transaction({ outputs: [output] });
+      this.coinbaseTX = new Transaction({
+        outputs: [output]
+      });
       this.addTransaction(this.coinbaseTX, true);
     }
   }
@@ -141,7 +162,7 @@ module.exports = class Block {
   /**
    * Converts a Block into string form.  Some fields are deliberately omitted.
    */
-  serialize(includeUTXOs=false) {
+  serialize(includeUTXOs = false) {
     return `{ "transactions": ${JSON.stringify(Array.from(this.transactions.entries()))},` +
       (includeUTXOs ? ` "utxos": ${JSON.stringify(this.utxos)},` : '') +
       ` "prevBlockHash": "${this.prevBlockHash}",` +
@@ -188,6 +209,28 @@ module.exports = class Block {
     if (!forceAccept && !this.willAcceptTransaction(tx)) {
       throw new Error(`Transaction ${tx.id} is invalid.`);
     }
+    else if (forceAccept && this.willAcceptTransaction(tx)) {
+      for (let output in tx.outputs) {
+        this.transactions.set(tx.id, tx);
+        this.utxos[tx.id].set(output);
+      }
+    }
+    else if (!forceAccept && this.willAcceptTransaction(tx)) {
+      this.transactions.set(tx.id, tx);
+
+      let input = tx.inputs;
+      let value = 0;
+      for (let i in input) {
+        console.log(this.utxos[i.txID][i.outputIndex].amount);
+        value += this.utxos[i.txID][i.outputIndex].amount;
+        delete this.utxos[i.txID][i.outputIndex];
+      }
+      for (let output in tx.outputs) {
+        this.utxos[tx.id].set(output);
+      }
+
+      this.addTransactionFee(value - tx.totalOutput());
+    }
 
     //
     // **YOUR CODE HERE**
@@ -222,7 +265,7 @@ module.exports = class Block {
    * A block is valid if all transactions (except for the coinbase transaction) are
    * valid and the total outputs equal the total inputs plus the coinbase reward.
    */
-  isValid(utxos=this.utxos) {
+  isValid(utxos = this.utxos) {
     // The genesis block is automatically valid.
     if (this.isGenesisBlock()) return true;
 

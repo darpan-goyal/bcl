@@ -120,15 +120,18 @@ module.exports = class Transaction {
     //      this transaction.
 
     let matchingUTXO = {};
-    let utxo;
 
     let totalWeHave = 0;
     for (let i = 0; i < this.inputs.length; i++) {
-          matchingUTXO[i] = utxos[this.inputs[i].txID][this.inputs[i].outputIndex]; //Part 1
+          let findInput = utxos[this.inputs[i].txID];
 
-          if (matchingUTXO[i] === undefined) {
+          if (findInput === undefined) {
             return false;
           }
+          
+          matchingUTXO[i] = findInput[this.inputs[i].outputIndex]; //Part 1
+
+          
           if (utils.hash(this.inputs[i].pubKey, 'base64') !== matchingUTXO[i].address) {
             return false;
           }
