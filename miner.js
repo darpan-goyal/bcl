@@ -98,15 +98,16 @@ module.exports = class Miner extends Client {
       // After that, create a new block and start searching for a proof.
       // The 'startNewSearch' method might be useful for this last step.
 
-      this.currentBlock.proof++;
+    
+     if(this.currentBlock.verifyProof())
+     {
+         this.receiveOutput(this.currentBlock.coinbaseTX);
+     
+         this.announceProof();
+         this.startNewSearch();
+     }
+     this.currentBlock.proof++;
     }
-    // if(this.isValidBlock(this.currentBlock))
-    //   {
-    //     this.receiveOutput(this.currentBlock.coinbaseTX);
-    //     this.announceProof();
-    //     this.startNewSearch();
-    //     this.log("found the proof, new block starting");
-    //   }
     // If we are testing, don't continue the search.
     if (!oneAndDone) {
       // Check if anyone has found a block, and then return to mining.

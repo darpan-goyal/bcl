@@ -210,27 +210,29 @@ module.exports = class Block {
       throw new Error(`Transaction ${tx.id} is invalid.`);
     }
     else if (forceAccept && this.willAcceptTransaction(tx)) {
-      for (let output in tx.outputs) {
         this.transactions.set(tx.id, tx);
-        this.utxos[tx.id].set(output);
-      }
+        this.utxos[tx.id].set(this.outputs);
     }
-    else if (!forceAccept && this.willAcceptTransaction(tx)) {
+    
       this.transactions.set(tx.id, tx);
 
       let input = tx.inputs;
       let value = 0;
-      for (let i in input) {
-        console.log(this.utxos[i.txID][i.outputIndex].amount);
-        value += this.utxos[i.txID][i.outputIndex].amount;
-        delete this.utxos[i.txID][i.outputIndex];
-      }
-      for (let output in tx.outputs) {
-        this.utxos[tx.id].set(output);
-      }
+      tx.inputs.forEach(({txID, outputIndex}) => {
+        value += this.utxos[txID][outputIndex].amount;
+        delete this.utxos[txID][outputIndex];
+        if(this.utxos[txID].length === 0)
+        {
+          delete this.utxos[txID];
+        }
+      });
+      
+      
+
+      this.utxos[tx.id] = this.outputs;
+      
 
       this.addTransactionFee(value - tx.totalOutput());
-    }
 
     //
     // **YOUR CODE HERE**
